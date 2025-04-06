@@ -1,0 +1,26 @@
+#!/bin/bash
+#
+# omg (onmega) - by: edu@bodhi
+
+if [[ $(whoami) = root ]]
+then
+	echo "Erro: root está errado"
+	echo "Tente sem: sudo"
+	exit 1
+elif [[ $0 = ./INSTALL ]]
+then
+	mv $(pwd) ~/.omg 2>/dev/null
+	mkdir ~/.icons 2>/dev/null
+	ln -s ~/.omg/onmega.png ~/.icons/onmega.png 2>/dev/null
+	ln -s ~/.omg/onmega.desktop ~/.local/share/applications/onmega.desktop 2>/dev/null
+	update-desktop-database ~/.local/share/applications 2>/dev/null
+	ln -s ~/.omg/omg ~/.local/bin/omg 2>/dev/null
+	chmod -R 777 ~/.omg 2>/dev/null
+	echo "Instalação para o usuário $(whoami) concluída!"
+	echo "Para ajuda, use:    omg --help"
+	echo "Para desfazer, use: omg uninstall"
+else
+	echo "Erro: $0 está errado"
+	echo "Deve ser: ./INSTALL"
+	exit 1
+fi

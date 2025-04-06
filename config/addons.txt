@@ -1,0 +1,3 @@
+*** Insira o caminho das extensões abaixo *** 
+~/.config/chromium/Default/Extensions/cjpalhdlnbpafiamejdnhcphjbkeiagm/1.42.4_0
+~/.config/chromium/Default/Extensions/ffbkglfijbcbgblgflchnbphjdllaogb/7.0.0_0

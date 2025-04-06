@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Name=onmega
+Comment=Auto tool on display.
+Exec=~/.omg/omg
+Terminal=false
+Type=Application
+Icon=onmega
+Categories=Development;

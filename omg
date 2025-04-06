@@ -1,0 +1,212 @@
+#!/bin/bash
+#
+# by: edu@bodhi
+
+# Tratamento de erros
+[[ ! -f /bin/chromium ]]&&echo 'Erro: Falta dependência: chromium'&&code=1
+[[ ! -f /bin/firejail ]]&&echo 'Erro: Falta dependência: firejail'&&code=1
+[[ ! -f /bin/grabc ]]&&echo 'Erro: Falta dependência: grabc'&&code=1
+[[ ! -f /bin/sed ]]&&echo 'Erro: Falta dependência: sed'&&code=1
+[[ ! -f /bin/xdotool ]]&&echo 'Erro: Falta dependência: xdotool'&&code=1
+[[ ! -d ~/.omg ]]&&echo 'Erro: Falta diretório: ~/.omg'&&code=1
+[[ $(whoami) = root ]]&&echo 'Erro: Usuário inválido: root'&&code=1
+[[ $code = 1 ]]&&exit 1
+
+# Recria void
+echo '#!/bin/bash
+#
+# Iniciar sem script: omg -s void
+exit'>~/.omg/mod/void.sh
+
+# omg (onmega)
+case $1 in
+	[0-9]*|-[0-9]*|--[0-9]*) if [[ -z $2 ]]
+	then
+		if DISPLAY=:$1 xdotool sleep 0 2>/dev/null
+		then
+		echo 'Clique no local para colher dados...'
+		DISPLAY=:$1 grabc>>~/.omg/script.log 2>/dev/null
+		echo -n hex:
+		tail -1 ~/.omg/script.log|tr '\n' ' '
+		DISPLAY=:$1 xdotool getmouselocation
+		sed -i '$d' ~/.omg/script.log
+		else
+		echo "A instância $1 não existe"
+		fi
+	else
+	case $2 in
+		SCRIPT|-SCRIPT|--SCRIPT|--S|-S|S|-s|--script|--s|-script|s|script) value=$1
+		shift 2
+		if [[ -z $1 ]]
+		then
+		DISPLAY=:$value ~/.omg/script.sh ~/.omg/omg exec&>>~/.omg/script.log&
+		echo 'Script carregado'
+		elif [[ -f ~/.omg/mod/"$*".sh ]]
+		then
+		DISPLAY=:$value ~/.omg/mod/"$*".sh ~/.omg/omg exec&>>~/.omg/script.log&
+		echo 'Módulo carregado'
+		else
+		echo "$* não existe
+
+Módulos:"
+		ls -1 ~/.omg/mod|sed 's/.sh//'
+		fi
+		;;
+		*) value=$1
+		shift
+		[[ $1 = - ]]||[[ $1 = -- ]]&&shift
+		DISPLAY=:$value $@
+		;;
+	esac
+	fi
+	;;
+	CONFIG|-CONFIG|--CONFIG|--C|-C|C|-c|--config|--c|-config|c|config) editor ~/.omg/config/*.txt
+	;;
+	MOD|-MOD|--MOD|--M|-M|M|-m|--mod|--m|-mod|m|mod) shift
+	if [[ -z $1 ]]
+	then
+	editor ~/.omg/mod/*.sh
+	elif [[ -f ~/.omg/mod/"$*".sh ]]
+	then
+	echo -n "$* existe, deseja remove-lo?
+[Enter]  Sim
+[Ctrl+C] Não"
+	read
+	rm ~/.omg/mod/"$*".sh
+	echo "Módulo $* removido!"
+	else
+	echo '#!/bin/bash'>~/.omg/mod/"$*".sh
+	chmod 777 ~/.omg/mod/"$*".sh
+	echo "Módulo $* criado!"
+	fi
+	;;
+	LOG|-LOG|--LOG|--L|-L|L|-l|--log|--l|-log|l|log) tail -30 ~/.omg/script.log
+	;;
+	KILL|-KILL|--KILL|--K|-K|K|-k|--kill|--k|-kill|k|kill) killall script.sh $(ls ~/.omg/mod) &>/dev/null
+	echo "Módulos em execução foram encerrados"
+	;;
+	TRASH|-TRASH|--TRASH|--T|-T|T|-t|--trash|--t|-trash|t|trash) echo -n 'Todos os logs serão perdidos, continuar?
+[Enter]  Sim
+[Ctrl+C] Não'
+	read
+	echo >~/.omg/script.log
+	echo 'Todos os logs foram removidos!'
+	;;
+	VERSION|-VERSION|--VERSION|--V|-V|V|-v|--version|--v|-version|v|version) echo "omg (onmega) 1.0
+Copyright (C) 2018 Free Software Foundation, Inc.
+Licença GPLv3+: GNU GPL versão 3 ou posterior <https://gnu.org/licenses/gpl.html>
+Este é um software livre: você é livre para alterá-lo e redistribuí-lo.
+NÃO HÁ QUALQUER GARANTIA, na máxima extensão permitida em lei.
+
+Escrito por: edu@bodhi"
+	;;
+	HELP|-HELP|--HELP|--H|-H|H|-h|--help|--h|-help|h|help) echo "Uso: omg [OPÇÃO] <comando|nome> [SWITCH] <caminho|url> ...
+Um funcionário automático em uma janela.
+
+  Opções:
+  [0-999] ..             mostra dados do local clicado na janela por numero
+  .. <comando>           executa <comando> na janela especificada por numero
+  .. -s, --script ..     executa script de inicialização na janela por numero
+  .. <nome>              executa um módulo na janela especificada por numero
+  -s, --script ..        edita o script de inicialização
+  .. <nome>              inicia diretamente com um módulo ou os lista
+  -c, --config           edita os arquivos de configuração txt
+  -m, --mod ..           edita os modulos complementares sh
+  .. <nome>              adiciona ou remove <nome> aos módulos
+  -k, --kill             encerra todos os módulos em execução
+  -l, --log              mostra os ultimos logs dos módulos
+  -t, --trash            limpa todos os logs e libera espaço
+  - , --                 interrompe o processamento de argumentos
+  -h, --help             mostra esta ajuda e sai
+  -v, --version          informa a versão e sai
+
+  Switches:
+  -c=/--cmd=<comando>    executa <comando> na inicialização ou inicia limpo
+  ...                    acesse a lista em: <https://onme.ga/switches>
+  <caminho|url>          inicia um arquivo, diretório local ou url 
+
+Relate os problemas para: <bug@onme.ga>
+Para mais informações, leia: <~/.omg/README.md>"
+	;;
+	exec) if [[ -z $2 ]]
+	then
+	sleep 1
+	else
+	shift
+	~/.omg/mod/"$*".sh ~/.omg/omg exec
+	fi
+	;;
+	uninstall)echo -n 'Prosseguir com desinstalação?
+[Enter]  Sim
+[Ctrl+C] Não'
+	read
+	rm ~/.icons/onmega.png 2>/dev/null
+	rm ~/.local/share/applications/onmega.desktop 2>/dev/null
+	update-desktop-database ~/.local/share/applications 2>/dev/null
+	rn ~/.local/bin/omg 2>/dev/null
+	echo "onmega foi desinstalado do usuário $(whoami)!"
+	;;
+	*) case $1 in
+		SCRIPT|-SCRIPT|--SCRIPT|--S|-S|S|-s|--script|--s|-script|s|script) if [[ -z $2 ]]
+		then
+		editor ~/.omg/script.sh
+		exit
+		elif [[ -f ~/.omg/mod/$2.sh ]]
+		then
+		opt=$2
+		shift 2
+		else
+		echo "$2 não existe
+
+Módulos:"
+		ls -1 ~/.omg/mod|sed 's/.sh//'
+		exit
+		fi
+		;;
+		CMD=*|-CMD=*|--CMD=*|c=*|-c=*|--c=*|cmd=*|-cmd=*|--cmd=*|C=*|-C=*|--C=*) cmd=$(echo $1|sed 's/c=//;s/-c=//;s/--c=//;s/cmd=//;s/-cmd=//;s/--cmd=//;s/C=//;s/-C=//;s/--C=//')
+		[[ -n $cmd ]]||cmd=~/.omg/mod/void.sh
+		shift
+		;;
+	esac
+	addons=$(tail +2 ~/.omg/config/addons.txt|tr ' ' ','|tr '\n' ',')
+	[[ -z $addons ]]||load=--load-extension=$addons
+	params=$(tail +2 ~/.omg/config/firejail.txt|sed 's/^/--/'|tr '\n' ' ')
+	[[ $1 = -* ]]||switch=$(tail +2 ~/.omg/config/chromium.txt|sed 's/^/--/'|tr '\n' ' ')
+	urls=$(tail +2 ~/.omg/config/urls.txt|tr '\n' ' ')
+	if [[ -n $@ ]]
+	then
+	links=$(echo $@|sed 's/ - / -- /;s/^- /-- /;s/ -$/ --/;s/^-$/--/')
+	elif [[ -n $urls ]]
+	then
+	links=$urls
+	fi
+	firejail $params --x11=xephyr chromium --temp-profile --mute-audio $load $switch $links &>/dev/null&
+	while ! xdotool search --name "firejail x11 sandbox" set_window --name "0"
+	do
+	sleep 0
+	done
+	sleep 2
+	value=$(ps e -u $(whoami)|sed -rn 's/.* DISPLAY=(:[0-9]*.D).*/\1/p'|tr -d ' D'|tail -1)
+	xdotool search --name "0" set_window --name "$(echo $value|tr -d ':')"
+	echo "  ___  _ __  _ __ ___   ___  __ _  __ _
+ / _ \| '_ \| '_ \` _ \ / _ \/ _\` |/ _\` |
+| (_) | | | | | | | | |  __/ (_| | (_| |
+ \___/|_| |_|_| |_| |_|\___|\__, |\__,_|
+                            |___/
+Inicie scripts nessa instância usando:
+omg$(echo $value|tr ':' ' ')"
+	if [[ -n $cmd ]]
+	then
+	sleep 2
+	[[ $cmd = ~/.omg/mod/void.sh ]]||echo '
+Comando iniciado...'
+	DISPLAY=$value $cmd
+	[[ $cmd = ~/.omg/mod/void.sh ]]||echo 'Comando terminado'
+	elif [[ -n $opt ]]
+	then
+	DISPLAY=$value ~/.omg/mod/"$opt".sh ~/.omg/omg exec&>>~/.omg/script.log&
+	else
+	DISPLAY=$value ~/.omg/script.sh ~/.omg/omg exec&>>~/.omg/script.log&
+	fi
+	;;
+esac
